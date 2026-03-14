@@ -9,6 +9,29 @@ To achieve that, it actually resembles the typical compiler a lot, so here's how
  - run a sequence of "filters" which analyze and re-write the TypedTree structures to adapt the code for Haxe
  - generate haxe modules from the processed TypedTree
 
+## 中文总结：代码转换流程与未完成功能
+
+### 代码如何进行转换
+
+1. **解析（Parse）**：将 AS3 源码解析为 `ParseTree`，保留语法结构和原始代码信息。  
+2. **加载外部类型（SWC）**：从 SWC 库中读取类与签名，补齐外部依赖的类型信息。  
+3. **类型化（Type）**：把 `ParseTree` 转成 `TypedTree`，完成 import 解析、类型引用绑定和表达式类型推导。  
+4. **过滤/重写（Filters）**：按顺序执行一组 filter，对 `TypedTree` 做语义保持的重写，把 AS3 语义适配到 Haxe。  
+5. **代码生成（Generate）**：从处理后的 `TypedTree` 输出 Haxe 模块代码。  
+
+### 当前未完成/待完善功能
+
+- 修复签名解析时 `a:*=b` 被错误识别为 `*=` 的问题。  
+- 增加最终清理 filter，去除冗余的 `TEHaxeRetype`。  
+- 将 `arr[arr.length] = value` 重写为 `arr.push(value)`。  
+- 为 SWC 生成类型补丁（如 `Object -> ASObject`、`* -> ASAny`）。  
+- 继续整理 `ASCompat`（例如改进为静态扩展方式）。  
+- 增加更多空构造函数以规避 Haxe 8531。  
+- 增加更多配置项（如省略类型标注、`private` 关键字）。  
+- 完善 import 处理（补全全限定名导入、去重）。  
+- （可选优化）对某些静态常量算术初始化添加 `inline`。  
+- 去除 `@:inject` / `@:postConstruct` / `@:preDestroy` 上不必要的 `public`。  
+
 ## DISCLAIMER
 
 This tool was developed and used by [InnoGames](https://www.innogames.com/) to migrate our ActionScript 3 codebases. Feel free to ask questions,
