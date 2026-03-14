@@ -21,11 +21,11 @@ To achieve that, it actually resembles the typical compiler a lot, so here's how
 
 ### 当前未完成/待完善功能
 
-- 修复签名解析时 `a:*=b` 被错误识别为 `*=` 的问题。  
+- 修复签名解析时 `a:*=b` 被误识别为 `*=` 的问题。  
 - 增加最终清理 filter，去除冗余的 `TEHaxeRetype`。  
 - 将 `arr[arr.length] = value` 重写为 `arr.push(value)`。  
 - 为 SWC 生成类型补丁（如 `Object -> ASObject`、`* -> ASAny`）。  
-- 继续整理 `ASCompat`（例如改进为静态扩展方式）。  
+- 继续优化 `ASCompat`（例如改进为静态扩展方式）。  
 - 增加更多空构造函数以规避 Haxe 8531。  
 - 增加更多配置项（如省略类型标注、`private` 关键字）。  
 - 完善 import 处理（补全全限定名导入、去重）。  
