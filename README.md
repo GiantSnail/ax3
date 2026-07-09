@@ -33,7 +33,6 @@ where `config.json` is something like:
 
 ## Known limitations
 
- - The parser doesn't currently support ASI (automatic semicolon insertion). The only case where a semicolon can be omitted is the last expression of a block.
  - Only a small, most commonly used subset of E4X is supported. It's recommended to rewrite the unsupported things in AS3 sources to adapt it for conversion.
 
 ## Building

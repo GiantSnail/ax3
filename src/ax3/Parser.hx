@@ -52,7 +52,7 @@ class Parser {
 						modifiers: modifiers,
 						keyword: scanner.consume(),
 						name: expectKind(TkIdent),
-						semicolon: expectKind(TkSemicolon)
+						semicolon: expectSemicolon()
 					});
 				case _:
 					if (modifiers.length > 0)
@@ -67,7 +67,7 @@ class Parser {
 							case "import":
 								return DImport(parseImportNext(scanner.consume()));
 							case "use":
-								return DUseNamespace(parseUseNamespace(scanner.consume()), expectKind(TkSemicolon));
+								return DUseNamespace(parseUseNamespace(scanner.consume()), expectSemicolon());
 							case _:
 								var ns = scanner.consume();
 								var sep = expectKind(TkColonColon);
@@ -173,7 +173,7 @@ class Parser {
 			}
 		}
 		var path = {first: first, rest: rest};
-		var semicolon = expectKind(TkSemicolon);
+		var semicolon = expectSemicolon();
 		return {
 			wildcard: wildcard,
 			semicolon: semicolon,
@@ -273,7 +273,7 @@ class Parser {
 						throw "Namespace without declaration";
 
 					if (text == "use") {
-						return MUseNamespace(parseUseNamespace(scanner.consume()), expectKind(TkSemicolon));
+						return MUseNamespace(parseUseNamespace(scanner.consume()), expectSemicolon());
 					}
 
 					var token = scanner.consume();
@@ -298,7 +298,7 @@ class Parser {
 
 	function parseClassVarNext(metadata:Array<Metadata>, namespace:Null<Token>, modifiers:Array<ClassFieldModifier>, kind:VarDeclKind):ClassField {
 		var vars = parseVarDecls();
-		var semicolon = expectKind(TkSemicolon);
+		var semicolon = expectSemicolon();
 		return {
 			metadata: metadata,
 			namespace: namespace,
@@ -474,12 +474,14 @@ class Parser {
 		var semicolon = switch scanner.advance().kind {
 			case TkSemicolon:
 				scanner.consume();
+			case _ if (scanner.lastConsumedToken.kind == TkBraceClose):
+				null; // the expression ended with a block, no semicolon needed
 			case TkBraceClose:
-				null; // if the next token is `}` then okay, allow no semicolon
-			case _ if (scanner.lastConsumedToken.kind != TkBraceClose):
-				throw "Semicolon expected after block expression";
+				mkVirtualSemicolon(); // if the next token is `}` then okay, allow no semicolon
+			case _ if (canInsertSemicolon(scanner.advance())):
+				mkVirtualSemicolon();
 			case _:
-				null;
+				throw "Semicolon expected after block expression";
 		}
 		return {expr: expr, semicolon: semicolon};
 	}
@@ -562,7 +564,8 @@ class Parser {
 			case "new":
 				return parseNewNext(consumedToken, allowComma);
 			case "return":
-				return EReturn(consumedToken, parseOptionalExpr(allowComma));
+				// ASI restricted production: a newline right after `return` terminates the statement
+				return EReturn(consumedToken, if (containsNewline(consumedToken.trailTrivia)) null else parseOptionalExpr(allowComma));
 			case "throw":
 				return EThrow(consumedToken, parseExpr(allowComma));
 			case "delete":
@@ -949,13 +952,13 @@ class Parser {
 				return parseBinop(first, OpAdd, allowComma);
 			case TkPlusEquals:
 				return parseBinop(first, t -> OpAssignOp(AOpAdd(t)), allowComma);
-			case TkPlusPlus:
+			case TkPlusPlus if (!hasNewlineBefore(token)): // ASI restricted production: `++` on a new line starts a new statement
 				return parseExprNext(EPostUnop(first, PostIncr(scanner.consume())), allowComma);
 			case TkMinus:
 				return parseBinop(first, OpSub, allowComma);
 			case TkMinusEquals:
 				return parseBinop(first, t -> OpAssignOp(AOpSub(t)), allowComma);
-			case TkMinusMinus:
+			case TkMinusMinus if (!hasNewlineBefore(token)): // ASI restricted production: `--` on a new line starts a new statement
 				return parseExprNext(EPostUnop(first, PostDecr(scanner.consume())), allowComma);
 			case TkAsterisk:
 				return parseBinop(first, OpMul, allowComma);
@@ -1193,7 +1196,7 @@ class Parser {
 			modifiers: modifiers,
 			kind: kind,
 			vars: parseVarDecls(),
-			semicolon: expectKind(TkSemicolon)
+			semicolon: expectSemicolon()
 		};
 	}
 
@@ -1239,7 +1242,7 @@ class Parser {
 				kind = IFFun(keyword, nameToken, parseFunctionSignature());
 		}
 
-		var semicolon = expectKind(TkSemicolon);
+		var semicolon = expectSemicolon();
 
 		return {
 			metadata: metadata,
@@ -1300,6 +1303,46 @@ class Parser {
 
 	function expectKeyword(name) {
 		return expect(t -> t.kind == TkIdent && t.text == name, 'Expected keyword: $name');
+	}
+
+	function expectSemicolon():Token {
+		var token = scanner.advance();
+		return if (token.kind == TkSemicolon)
+			scanner.consume()
+		else if (canInsertSemicolon(token))
+			mkVirtualSemicolon()
+		else
+			throw "Expected token: TkSemicolon";
+	}
+
+	// ASI: a semicolon may be automatically inserted when the offending token
+	// is on a new line, is a closing brace, or is the end of file
+	function canInsertSemicolon(token:PeekToken):Bool {
+		return token.kind == TkBraceClose || token.kind == TkEof || hasNewlineBefore(token);
+	}
+
+	function hasNewlineBefore(token:PeekToken):Bool {
+		return containsNewline(scanner.lastConsumedToken.trailTrivia) || containsNewline(token.leadTrivia);
+	}
+
+	static function containsNewline(trivia:Array<Trivia>):Bool {
+		for (item in trivia) {
+			switch item.kind {
+				case TrNewline: return true;
+				case TrBlockComment if (item.text.indexOf("\n") != -1): return true; // a multi-line comment counts as a line terminator
+				case _:
+			}
+		}
+		return false;
+	}
+
+	// a virtual semicolon carries empty text, so the AS3 printer reproduces the
+	// source exactly while GenHaxe prints a real `;`. it steals the trailing trivia
+	// of the last consumed token so the generated `;` lands right after the
+	// statement, before the line break
+	function mkVirtualSemicolon():Token {
+		var last = scanner.lastConsumedToken;
+		return new Token(last.pos + last.text.length, TkSemicolon, "", [], last.removeTrailingTrivia());
 	}
 }
 

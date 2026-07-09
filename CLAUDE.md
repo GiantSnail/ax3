@@ -64,5 +64,8 @@ Unresolvable AS3 types fall back to `TTAny`, which maps to the `ASAny` compat ab
 
 ## Known limitations (from README)
 
-- The parser does not support ASI; semicolons may only be omitted for the last expression of a block.
 - Only a small, commonly used subset of E4X is supported — rewrite unsupported constructs in the AS3 sources before converting.
+
+## ASI (automatic semicolon insertion)
+
+The parser supports ASI: when a statement/declaration terminator is missing and the next token is on a new line, is `}`, or is EOF, a *virtual* semicolon token (empty text) is synthesized (`Parser.expectSemicolon` / `parseBlockExprNext` / `mkVirtualSemicolon`). Restricted productions are honored: a newline right after `return` ends the statement, and postfix `++`/`--` must be on the same line as their operand. Virtual semicolons print as `;` in GenHaxe but as empty text in the AS3 round-trip `Printer` (overridden `printSemicolon`), keeping `checkParseTree` byte-exact. `for(;;)` headers never use ASI.

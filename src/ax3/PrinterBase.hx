@@ -26,7 +26,8 @@ class PrinterBase {
 		printTextWithTrivia(":", s);
 	}
 
-	inline function printSemicolon(s:Token) {
+	// overridable so the AS3 round-trip printer can print virtual (ASI-inserted) semicolons as-is
+	function printSemicolon(s:Token) {
 		printTextWithTrivia(";", s);
 	}
 

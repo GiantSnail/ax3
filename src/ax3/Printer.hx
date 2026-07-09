@@ -10,6 +10,12 @@ class Printer extends PrinterBase {
 		return p.toString();
 	}
 
+	// print the actual token text so ASI-inserted virtual semicolons (empty text)
+	// round-trip the original source exactly
+	override function printSemicolon(s:Token) {
+		printTextWithTrivia(s.text, s);
+	}
+
 	function printFile(file:File) {
 		for (decl in file.declarations)
 			printDeclaration(decl);
