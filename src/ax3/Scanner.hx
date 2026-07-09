@@ -8,6 +8,7 @@ enum ScanMode {
 	MNormal;
 	MNoRightShift;
 	MExprStart;
+	MNoAsteriskEquals;
 }
 
 class Scanner {
@@ -32,6 +33,7 @@ class Scanner {
 	public inline function advance() return doAdvance(MNormal);
 	public inline function advanceNoRightShift() return doAdvance(MNoRightShift);
 	public inline function advanceExprStart() return doAdvance(MExprStart);
+	public inline function advanceNoAsteriskEquals() return doAdvance(MNoAsteriskEquals);
 
 	public function doAdvance(mode:ScanMode):PeekToken {
 		if (lastToken != null) {
@@ -253,7 +255,7 @@ class Scanner {
 
 				case "*".code:
 					pos++;
-					if (pos < end && text.fastCodeAt(pos) == "=".code) {
+					if (mode != MNoAsteriskEquals && pos < end && text.fastCodeAt(pos) == "=".code) {
 						pos++;
 						return mk(TkAsteriskEquals);
 					} else {
@@ -348,7 +350,7 @@ class Scanner {
 								} else {
 									return mk(TkGtGt);
 								}
-							case "=".code:
+							case "=".code if (mode != MNoRightShift):
 								pos++;
 								return mk(TkGtEquals);
 							case _:

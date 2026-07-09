@@ -26,7 +26,7 @@ class Main {
 		Timers.swcs = stamp() - t;
 
 		var files = [];
-		var srcs = if (Std.is(config.src, String)) [config.src] else config.src;
+		var srcs = if (Std.isOfType(config.src, String)) [config.src] else config.src;
 		for (src in srcs) {
 			walk(src, files);
 		}
@@ -66,6 +66,7 @@ class Main {
 		for (path => kind in ctx.getToplevelImports()) {
 			imports.push('$kind $path;');
 		}
+		imports.sort(Reflect.compare); // deterministic output (also groups `import` before `using`)
 		if (config.rootImports != null) {
 			imports.push(sys.io.File.getContent(config.rootImports));
 		}

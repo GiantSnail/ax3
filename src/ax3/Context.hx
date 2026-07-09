@@ -25,7 +25,6 @@ class Context {
 
 	public inline function addToplevelImport(path, kind) toplevelImports[path] = kind;
 
-	// TODO: sort the keys?
 	public inline function getToplevelImports() return toplevelImports.keyValueIterator();
 }
 

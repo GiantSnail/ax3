@@ -4,6 +4,7 @@ import ax3.GenHaxe.canSkipTypeHint;
 
 class FixImports extends AbstractFilter {
 	var usedClasses:Null<Map<TClassOrInterfaceDecl, Bool>>;
+	var seenImports:Null<Map<String, Bool>>;
 
 	override function processExpr(e:TExpr):TExpr {
 		e = mapExpr(processExpr, e);
@@ -31,12 +32,14 @@ class FixImports extends AbstractFilter {
 
 	override function processModule(mod:TModule) {
 		usedClasses = new Map();
+		seenImports = new Map();
 		processDecl(mod.pack.decl);
 		for (decl in mod.privateDecls) {
 			processDecl(decl);
 		}
 		processImports(mod);
 		usedClasses = null;
+		seenImports = null;
 	}
 
 	override function processClass(c:TClassOrInterfaceDecl) {
@@ -74,11 +77,36 @@ class FixImports extends AbstractFilter {
 	}
 
 	override function processImport(i:TImport):Bool {
-		return switch i.kind {
+		var keep = switch i.kind {
 			case TIDecl({kind: TDClassOrInterface(cls)}):
 				usedClasses.exists(cls);
 			case _:
 				true;
+		}
+		// duplicates can happen when merging in out-of-package imports, keep only the first one
+		return keep && !isDuplicate(i);
+	}
+
+	function isDuplicate(i:TImport):Bool {
+		var key = switch i.kind {
+			case TIDecl({kind: TDNamespace(_)}): return false; // not printed by GenHaxe anyway
+			case TIDecl(d): "decl:" + declKey(d);
+			case TIAliased(d, _, name): "alias:" + name.text + ":" + declKey(d);
+			case TIAll(pack, _, _): "all:" + pack.name;
+		}
+		if (seenImports.exists(key)) {
+			return true;
+		}
+		seenImports[key] = true;
+		return false;
+	}
+
+	static function declKey(d:TDecl):String {
+		return switch d.kind {
+			case TDClassOrInterface(c): c.parentModule.parentPack.name + "::" + c.name;
+			case TDVar(v): v.parentModule.parentPack.name + "::" + v.name;
+			case TDFunction(f): f.parentModule.parentPack.name + "::" + f.name;
+			case TDNamespace(_): throw "assert";
 		}
 	}
 

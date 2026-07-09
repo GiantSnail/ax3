@@ -32,6 +32,7 @@ class Filters {
 			new RewriteBlockBinops(context),
 			new RewriteNewArray(context),
 			new RewriteDelete(context),
+			new RewriteArrayPush(context),
 			new RewriteArrayAccess(context),
 			new RewriteAs(context),
 			new RewriteIs(context),
@@ -61,6 +62,7 @@ class Filters {
 			new UintComparison(context),
 			new HandleProtectedOverrides(context),
 			new CheckUntypedMethodCalls(context),
+			new RemoveRedundantRetypes(context),
 			new RemoveRedundantParenthesis(context),
 			new FixImports(context)
 		]) {

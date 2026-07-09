@@ -428,7 +428,8 @@ class Parser {
 	}
 
 	function parseSyntaxType(allowAny:Bool):SyntaxType {
-		var token = scanner.advance();
+		// use the no-asterisk-equals scan mode so `a:*=b` is parsed as `*` followed by `=`
+		var token = scanner.advanceNoAsteriskEquals();
 		switch token.kind {
 			case TkAsterisk if (allowAny):
 				return TAny(scanner.consume());

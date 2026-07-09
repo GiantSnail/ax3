@@ -1,0 +1,9 @@
+{
+	"src": "test-fixture/src",
+	"hxout": "test-fixture/out",
+	"swc": [],
+	"settings": {
+		"checkNullIteratee": false,
+		"flashProperties": "none"
+	}
+}
