@@ -548,7 +548,7 @@ class Scanner {
 	}
 
 	inline function isIdentStart(ch) {
-		return ch == "_".code || (ch >= "a".code && ch <= "z".code) || (ch >= "A".code && ch <= "Z".code);
+		return ch == "_".code || ch == "$".code || (ch >= "a".code && ch <= "z".code) || (ch >= "A".code && ch <= "Z".code);
 	}
 
 	inline function isIdentPart(ch) {

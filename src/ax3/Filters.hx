@@ -10,6 +10,7 @@ class Filters {
 		var detectFieldRedefinitions = new RewriteRedefinedPrivate.DetectFieldRedefinitions(context);
 
 		for (f in [
+			new RenameDollarIdents(context), // must run first: later filters and codegen assume Haxe-valid identifiers
 			detectFieldRedefinitions,
 			new RewriteRedefinedPrivate.RenameRedefinedFields(context, detectFieldRedefinitions),
 			new RewriteAssignOps(context),

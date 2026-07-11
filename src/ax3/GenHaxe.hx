@@ -589,7 +589,7 @@ class GenHaxe extends PrinterBase {
 			case TECast(c): printCast(c);
 			case TELocalFunction(f): printLocalFunction(f);
 			case TELiteral(l): printLiteral(l);
-			case TELocal(syntax, v): printTextWithTrivia(syntax.text, syntax);
+			case TELocal(syntax, v): printTextWithTrivia(v.name, syntax); // v.name, not syntax.text: locals can be renamed by filters (e.g. RenameDollarIdents)
 			case TEField(object, fieldName, fieldToken): printFieldAccess(object, fieldName, fieldToken);
 			case TEBuiltin(syntax, name): printBuiltin(syntax, name);
 			case TEDeclRef(_, {kind: TDClassOrInterface({parentModule: {parentPack: {name: "flash.utils"}}, name: "Dictionary"})}):
@@ -1072,7 +1072,8 @@ class GenHaxe extends PrinterBase {
 		printOpenBrace(o.syntax.openBrace);
 		for (f in o.fields) {
 			var fieldText = switch f.syntax.nameKind {
-				case FNIdent: f.name;
+				case FNIdent if (f.name.indexOf("$") == -1): f.name;
+				case FNIdent: '"' + f.name + '"'; // `$` is not valid in Haxe identifiers, but quoted keys are fine
 				case FNStringSingle: "'" + f.name + "'";
 				case FNStringDouble | FNInteger: '"' + f.name + '"';
 			};
