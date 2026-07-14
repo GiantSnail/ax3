@@ -58,3 +58,11 @@ Most of the `TODO`s are actually in the code, so look there too, but still:
   - add imports for fully-qualified names that can come from `@haxe-type`
  - maybe add `inline` for arithmetic ops in static var inits where all operands are also static inline
  - remove `public` from `@:inject`/`@:postConstruct`/`@:preDestroy` as these should not really be part of public API
+ - Support Unicode whitespace while preserving original trivia.
+ - Support custom namespace modifiers on class members.
+ - Ignore duplicate imports inside internal helper classes.
+ - Support legacy numeric literals, AS3 string escapes, and unary plus expressions.
+ - Re-run all configured conversions and record reproducible before/after results.
+ - Support dotted namespace paths before re-enabling excluded generated protocol sources.
+ - Add an opt-in best-effort mode that reports every skipped or degraded output.
+ - Add focused fixtures, smoke tests, and representative generated-Haxe compilation checks.
